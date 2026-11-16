@@ -8,12 +8,13 @@ High-performance, secure backend RESTful service for the **Doctor Tracker** heal
 1. [Overview & Tech Stack](#overview--tech-stack)
 2. [Local Setup & Installation Guide](#local-setup--installation-guide)
 3. [Environment Configuration (.env.example)](#environment-configuration-envexample)
-4. [Database Seeder & Test Credentials](#database-seeder--test-credentials)
-5. [System Architecture & Module Design](#system-architecture--module-design)
-6. [API Endpoints Reference](#api-endpoints-reference)
-7. [Database Schema & Indexing Strategy](#database-schema--indexing-strategy)
-8. [Technical Decisions](#technical-decisions)
-9. [Troubleshooting Guide](#troubleshooting-guide)
+4. [Deploying to Vercel (ভার্সেলে ডিপ্লয়মেন্ট নির্দেশিকা)](#deploying-to-vercel-ভার্সেলে-ডিপ্লয়মেন্ট-নির্দেশিকা)
+5. [Database Seeder & Test Credentials](#database-seeder--test-credentials)
+6. [System Architecture & Module Design](#system-architecture--module-design)
+7. [API Endpoints Reference](#api-endpoints-reference)
+8. [Database Schema & Indexing Strategy](#database-schema--indexing-strategy)
+9. [Technical Decisions](#technical-decisions)
+10. [Troubleshooting Guide](#troubleshooting-guide)
 
 ---
 
@@ -26,21 +27,22 @@ The Doctor Tracker backend is designed as an independent, decoupled microservice
 * **Language:** TypeScript (v5.7+) with `tsx` development runner
 * **Database:** MongoDB with Mongoose ODM (v8.10+)
 * **Authentication:** JSON Web Tokens (JWT) & bcryptjs password hashing
+* **Deployment:** Serverless on Vercel (`api/index.ts` + `vercel.json`) & standalone Node.js server (`server.ts`)
 * **Validation:** Zod schema validation
 * **Performance:** Compound B-Tree indexes, aggregation pipelines, and `.lean()` query projections
 
 ---
 
-## 🚀 Local Setup & Installation Guide (.env.example )
+## 🚀 Local Setup & Installation Guide (.env.example সহ ইনস্টলেশন)
 
-### Prerequisites ()
+### Prerequisites (প্রয়োজনীয় রিকোয়ারমেন্টস)
 * **Node.js**: v18.0.0 or higher (v20+ or v22+ recommended)
 * **npm**: v9.0.0 or higher
 * **MongoDB**: A running local MongoDB daemon (`mongodb://127.0.0.1:27017`) **OR** a free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cloud URI.
 
 ---
 
-### Step-by-Step Installation 
+### Step-by-Step Installation (ধাপে ধাপে ইনস্টলেশন নির্দেশিকা)
 
 #### 1. Navigate to the backend directory
 ```bash
@@ -92,6 +94,37 @@ npm run dev
 
 * **Server URL:** `http://localhost:4000`
 * **Health Check:** `http://localhost:4000/`
+
+---
+
+## ☁️ Deploying to Vercel (ভার্সেলে ডিপ্লয়মেন্ট নির্দেশিকা)
+
+The backend is fully configured for zero-configuration Serverless Functions on Vercel using `api/index.ts` and `vercel.json`.
+
+### Step-by-Step Vercel Deployment:
+
+1. **Push your repository to GitHub / GitLab / Bitbucket.**
+2. **Go to [Vercel Dashboard](https://vercel.com/dashboard) and click "Add New Project".**
+3. **Import your repository.**
+4. **Configure Project Settings:**
+   * **Root Directory**: Select `backend` (⚠️ **অত্যন্ত গুরুত্বপূর্ণ**)
+   * **Framework Preset**: `Other`
+   * **Build Command**: `npm run build`
+   * **Output Directory**: `dist`
+5. **Add Environment Variables in Vercel:**
+   | Variable | Value Description | Example |
+   | :--- | :--- | :--- |
+   | `MONGODB_URI` | Cloud MongoDB Atlas URI with credentials | `mongodb+srv://admin:pass@cluster0.abc.mongodb.net/doctor_tracker?retryWrites=true&w=majority` |
+   | `JWT_SECRET` | Strong secret random string | `doctor_tracker_super_secret_jwt_key_2026` |
+   | `JWT_EXPIRES_IN` | Token expiration duration | `7d` |
+   | `FRONTEND_URL` | Your deployed frontend URL on Vercel | `https://your-frontend.vercel.app` |
+   | `NODE_ENV` | Environment mode | `production` |
+6. **MongoDB Atlas IP Whitelist (⚠️ গুরুত্বপূর্ণ):**
+   * Vercel Serverless Functions use dynamic IP addresses.
+   * Go to **MongoDB Atlas** $\rightarrow$ **Network Access** $\rightarrow$ **Add IP Address** $\rightarrow$ Click **Allow Access from Anywhere** (`0.0.0.0/0`).
+7. **Click Deploy!**
+   * Vercel will build and assign an API domain (e.g. `https://your-backend.vercel.app`).
+   * Test your API health check: `https://your-backend.vercel.app/`
 
 ---
 
@@ -242,7 +275,7 @@ const stats = await Patient.aggregate([
 
 ---
 
-## ❓ Troubleshooting Guide 
+## ❓ Troubleshooting Guide (সমস্যা ও সমাধান)
 
 1. **Port 4000 Already In Use (`EADDRINUSE`):**
    * A lingering Node.js process is occupying port 4000.
@@ -257,7 +290,7 @@ const stats = await Patient.aggregate([
 
 2. **MongoDB Connection Timeout:**
    * Verify that your local MongoDB service is started (`mongod` or `net start MongoDB`).
-   * If using **MongoDB Atlas**, verify that your current IP address is added to the Atlas Network Access Whitelist (`0.0.0.0/0` for development).
+   * If using **MongoDB Atlas**, verify that your current IP address is added to the Atlas Network Access Whitelist (`0.0.0.0/0` for development/serverless).
 
 3. **CORS Rejected by Frontend:**
-   * Verify that `FRONTEND_URL` in `.env` is set to `http://localhost:3000`.
+   * Verify that `FRONTEND_URL` in `.env` or Vercel Environment Variables is set to your frontend domain.

@@ -9,13 +9,33 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 
 const app = express();
 
-// Middlewares
+// Configure CORS for both local development and Vercel deployments
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
+  : ["http://localhost:3000"];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app") ||
+        process.env.NODE_ENV !== "production";
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -25,6 +45,7 @@ app.get("/", (req: Request, res: Response) => {
     status: "ok",
     service: "Doctor Tracker API",
     version: "1.0.0",
+    environment: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
   });
 });
